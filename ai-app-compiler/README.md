@@ -1,219 +1,181 @@
-# 🚀 AI App Compiler
+# 📁 app/
 
-An end-to-end backend system that converts a natural language app idea into a structured application blueprint using a multi-stage pipeline.
-
----
-
-## 🧠 Overview
-
-AI App Compiler takes a simple prompt like:
-
-> "Build a CRM with login and dashboard"
-
-and transforms it into:
-
-- Structured intent
-- System design
-- Application schema
-- Validation + repair
-- Metrics tracking
-
-This project simulates a **compiler-like pipeline for application generation**.
+This is the core application directory of the **AI App Compiler** project. It contains the FastAPI server entry point, the multi-stage compiler pipeline, and shared utility modules.
 
 ---
 
-## ⚙️ Pipeline Architecture
-
-```bash
-User Prompt
-↓
-Intent Extraction
-↓
-System Design
-↓
-Schema Generation
-↓
-Validation
-↓
-Repair (if needed)
-↓
-Final Output
-```
-
----
-
-## 🧩 Features
-
-- 🔍 **Intent Extraction**
-  - Identifies features, roles, entities
-
-- 🏗️ **System Design**
-  - Generates architecture, modules, user flows
-
-- 🗂️ **Schema Generation**
-  - UI schema
-  - API schema
-  - Database schema
-  - Auth rules
-
-- ✅ **Validation Layer**
-  - Ensures required keys exist
-
-- 🔧 **Auto Repair System**
-  - Fixes incomplete or broken schemas
-
-- 📊 **Metrics Tracking**
-  - Total requests
-  - Valid outputs
-  - Invalid outputs
-  - Repairs triggered
-
-- 🌐 **FastAPI Backend**
-  - Interactive Swagger UI (`/docs`)
-
----
-
-## 🛠️ Tech Stack
-
-- Python 3.12
-- FastAPI
-- Pydantic
-- Uvicorn
-
----
-
-## 📂 Project Structure
+## 📂 Structure
 
 ```
-ai-app-compiler/
+app/
 │
-├── app/
-│   ├── main.py
-│   │
-│   ├── pipeline/
-│   │   ├── intent.py
-│   │   ├── design.py
-│   │   ├── schema.py
-│   │   ├── validator.py
-│   │   └── repair.py
-│   │
-│   └── utils/
-│       ├── llm.py
-│       └── metrics.py
+├── main.py
+│
+├── pipeline/
+│   ├── intent.py
+│   ├── design.py
+│   ├── schema.py
+│   ├── validator.py
+│   └── repair.py
+│
+└── utils/
+    ├── llm.py
+    └── metrics.py
 ```
 
 ---
 
-## 🚀 How to Run
+## 📄 main.py
 
-### 1️⃣ Clone repo
+The **entry point** of the FastAPI application.
 
-```bash
-git clone <your-repo-link>
-cd ai-app-compiler
+**Responsibilities:**
+- Initializes the FastAPI app instance
+- Defines API routes (`GET /`, `POST /generate`, `GET /metrics`)
+- Orchestrates the full pipeline by calling each stage in sequence
+- Returns the final compiled blueprint as a JSON response
+
+---
+
+## 🔩 pipeline/
+
+Contains all the sequential stages of the compiler pipeline. Each file is responsible for one distinct transformation step.
+
+---
+
+### `intent.py` — 🔍 Intent Extraction
+
+**Purpose:** Parses the raw user prompt and extracts structured intent.
+
+**Output includes:**
+- App type (e.g., CRM, e-commerce, blog)
+- Core features (e.g., login, dashboard, notifications)
+- User roles (e.g., admin, user, guest)
+- Key entities (e.g., User, Product, Order)
+
+---
+
+### `design.py` — 🏗️ System Design
+
+**Purpose:** Takes the extracted intent and generates a high-level system design.
+
+**Output includes:**
+- Application modules
+- User flows
+- Architecture overview
+- Component relationships
+
+---
+
+### `schema.py` — 🗂️ Schema Generation
+
+**Purpose:** Converts the system design into concrete schemas.
+
+**Output includes:**
+- **UI Schema** — Pages, components, and layout
+- **API Schema** — Endpoints, methods, and payloads
+- **Database Schema** — Tables, fields, and relations
+- **Auth Rules** — Role-based access control definitions
+
+---
+
+### `validator.py` — ✅ Validation Layer
+
+**Purpose:** Validates the generated schema to ensure structural correctness.
+
+**Checks:**
+- All required top-level keys are present
+- No empty or null critical fields
+- Schema conforms to expected format
+
+**Returns:** `valid: true` or `valid: false` with error details
+
+---
+
+### `repair.py` — 🔧 Auto Repair
+
+**Purpose:** Automatically fixes schemas that fail validation.
+
+**Behavior:**
+- Triggered only when `validator.py` returns `valid: false`
+- Fills in missing keys with safe defaults
+- Re-runs validation after repair
+- Increments `repairs_triggered` in metrics
+
+---
+
+## 🛠️ utils/
+
+Shared utility modules used across the pipeline.
+
+---
+
+### `llm.py` — 🤖 LLM Interface
+
+**Purpose:** Abstracts all interactions with the language model.
+
+**Responsibilities:**
+- Sends prompts to the LLM (currently simulated / mock)
+- Handles response parsing
+- Can be swapped to use OpenAI, Gemini, or any other LLM provider with minimal changes
+
+---
+
+### `metrics.py` — 📊 Metrics Tracker
+
+**Purpose:** Tracks runtime statistics for observability.
+
+**Tracks:**
+- `total_requests` — Number of `/generate` calls made
+- `valid_outputs` — Schemas that passed validation
+- `invalid_outputs` — Schemas that failed validation
+- `repairs_triggered` — Number of times the repair stage was invoked
+
+**Exposed via:** `GET /metrics`
+
+---
+
+## 🔄 Pipeline Flow
+
 ```
-
-### 2️⃣ Create virtual environment
-
-```bash
-python -m venv venv
-source venv/bin/activate
-```
-
-### 3️⃣ Install dependencies
-
-```bash
-pip install fastapi uvicorn pydantic
-```
-
-### 4️⃣ Run server
-
-```bash
-uvicorn app.main:app --reload --port 8000
+main.py receives POST /generate
+        │
+        ▼
+  intent.py → extracts intent from prompt
+        │
+        ▼
+  design.py → generates system design
+        │
+        ▼
+  schema.py → produces UI, API, DB, Auth schemas
+        │
+        ▼
+  validator.py → checks schema integrity
+        │
+     ┌──┴──┐
+   valid  invalid
+     │      │
+     │   repair.py → fixes and re-validates
+     │      │
+     └──────┘
+        │
+        ▼
+  metrics.py → updates counters
+        │
+        ▼
+  Final JSON Response
 ```
 
 ---
 
-## 🌐 API Endpoints
+## 📌 Notes
 
-### 🏠 Home
-`GET /`
-
----
-
-### ⚡ Generate App Blueprint
-`POST /generate`
-
-**Request:**
-```json
-{
-  "prompt": "Build a CRM with login and dashboard"
-}
-```
-
-**Response:**
-```json
-{
-  "intent": {},
-  "design": {},
-  "schema": {},
-  "valid": true
-}
-```
-
----
-
-### 📊 Metrics
-`GET /metrics`
-
-**Example:**
-```json
-{
-  "total_requests": 3,
-  "valid_outputs": 3,
-  "invalid_outputs": 0,
-  "repairs_triggered": 0
-}
-```
-
----
-
-## 🧠 Key Concept
-
-This project mimics a compiler pipeline:
-
-- **Input** → Natural Language
-- **Output** → Structured System Design
-
-It demonstrates:
-
-- System thinking
-- Modular architecture
-- Validation & fault tolerance
-- Observability via metrics
-
----
-
-## 🔮 Future Improvements
-
-- Integrate real LLM (OpenAI / Gemini)
-- Generate actual frontend/backend code
-- Add database integration
-- Deploy on cloud (AWS / GCP)
+- Each pipeline stage is **independently importable** and testable
+- The `llm.py` module is designed to be **provider-agnostic** — swap in any LLM with minimal refactoring
+- `metrics.py` uses **in-memory tracking** (resets on server restart); can be extended to use Redis or a database for persistence
 
 ---
 
 ## 👩‍💻 Author
 
 **Doyel Mishra**
-
----
-
-## ⭐ Why This Project Matters
-
-This is not just an API — it demonstrates:
-
-- Pipeline architecture
-- Structured transformations
-- Backend system design
-- Real-world engineering thinking
