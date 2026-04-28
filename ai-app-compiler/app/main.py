@@ -1,14 +1,12 @@
-from fastapi import FastAPI
-from app.pipeline.intent import extract_intent
-from app.pipeline.design import design_system
-from app.pipeline.schema import generate_schema
-from app.pipeline.validator import validate_schema
-from app.pipeline.repair import repair_schema
+from pydantic import BaseModel
 
-app = FastAPI()
+class PromptRequest(BaseModel):
+    prompt: str
 
 @app.post("/generate")
-def generate(prompt: str):
+def generate(req: PromptRequest):
+    prompt = req.prompt
+
     intent = extract_intent(prompt)
     design = design_system(intent)
     schema = generate_schema(design)
