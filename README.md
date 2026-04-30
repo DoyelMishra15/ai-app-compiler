@@ -109,7 +109,7 @@ ai-app-compiler/
 ### 1️⃣ Clone repo
 
 ```bash
-git clone <your-repo-link>
+git clone https://github.com/DoyelMishra15/ai-app-compiler.git
 cd ai-app-compiler
 ```
 
